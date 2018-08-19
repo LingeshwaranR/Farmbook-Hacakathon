@@ -3,6 +3,8 @@ package com.example.useri.chatbot;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,10 +14,17 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -31,6 +40,7 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
@@ -56,9 +66,15 @@ import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener{
     private final int REQ_CODE_SPEECH_INPUT = 100;
-    ImageView btnSpeak;
-    TextView txtSpeechInput, outputText;
+    ImageView btnSpeak,btnvol;
     TextToSpeech tts;
+    EditText editText;
+    Boolean flagFab = true;
+    Boolean flagFab1 = false;
+    Boolean flag=true;
+    String userQuery;
+    TextView textView;
+
     String query,resultnew;
     int MY_DATA_CHECK_CODE = 1000;
 
@@ -67,29 +83,136 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     private CollectionReference notebookRef = db.collection("user");
 
     private NoteAdapter adapter;
+    RecyclerView recyclerView;
 
 
 
 
-    private RecyclerView story;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+         recyclerView = findViewById(R.id.recyclerView);
 
         tts = new TextToSpeech(this, this);
         btnSpeak = findViewById(R.id.fab_img);
+        btnvol=findViewById(R.id.fab_img1);
+        textView=findViewById(R.id.textView4);
+        editText = (EditText)findViewById(R.id.editText);
+
+        btnvol.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                volumeupdown();
+            }
+
+            private void volumeupdown() {
+                ImageView fab_images = (ImageView)findViewById(R.id.fab_img1);
+
+                Bitmap image = BitmapFactory.decodeResource(getResources(),R.drawable.speaker);
+                Bitmap image1 = BitmapFactory.decodeResource(getResources(),R.drawable.speakeroff);
+                if(flagFab1){
+                    ImageViewAnimatedChange(MainActivity.this,fab_images,image);
+                    flagFab1=false;
+                    flag=true;
+                }
+                else
+                {
+                    ImageViewAnimatedChange(MainActivity.this,fab_images,image1);
+                    flagFab1=true;
+                    flag=false;
+                }
+            }
+        });
+
+
 
 
 
         setUpRecyclerView();
+//        InputMethodManager imm = (InputMethodManager) this
+//                .getSystemService(Context.INPUT_METHOD_SERVICE);
+//
+//        if (imm.isAcceptingText()) {
+//            textView.setVisibility(View.GONE);
+//            btnvol.setVisibility(View.GONE);
+//        } else {
+//        }
+
 
         btnSpeak.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 promptSpeechInput();
+
+
+
+
+            }
+        });
+        editText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                ImageView fab_img = (ImageView)findViewById(R.id.fab_img);
+                Bitmap img = BitmapFactory.decodeResource(getResources(),R.drawable.ic_send_white_24dp);
+                Bitmap img1 = BitmapFactory.decodeResource(getResources(),R.drawable.ic_mic_white_24dp);
+
+
+                if (s.toString().trim().length()!=0 && flagFab){
+                    ImageViewAnimatedChange(MainActivity.this,fab_img,img);
+                    flagFab=false;
+
+
+                    btnSpeak.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+
+                           userQuery= editText.getText().toString();
+                           editText.getText().clear();
+                            query=userQuery;
+
+                            RetrieveFeedTask task=new RetrieveFeedTask();
+                            task.execute(userQuery);
+
+
+
+
+
+                        }
+                    });
+
+                }
+                else if (s.toString().trim().length()==0){
+                    ImageViewAnimatedChange(MainActivity.this,fab_img,img1);
+                    flagFab=true;
+
+                    btnSpeak.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            promptSpeechInput();
+
+
+
+
+                        }
+                    });
+
+
+                }
+
+
+            }
+
+
+            @Override
+            public void afterTextChanged(Editable s) {
 
 
             }
@@ -99,8 +222,32 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
     }
 
+
+
+
+    public void ImageViewAnimatedChange(Context c, final ImageView v, final Bitmap new_image) {
+        final Animation anim_out = AnimationUtils.loadAnimation(c, R.anim.zoom_out);
+        final Animation anim_in  = AnimationUtils.loadAnimation(c, R.anim.zoom_in);
+        anim_out.setAnimationListener(new Animation.AnimationListener()
+        {
+            @Override public void onAnimationStart(Animation animation) {}
+            @Override public void onAnimationRepeat(Animation animation) {}
+            @Override public void onAnimationEnd(Animation animation)
+            {
+                v.setImageBitmap(new_image);
+                anim_in.setAnimationListener(new Animation.AnimationListener() {
+                    @Override public void onAnimationStart(Animation animation) {}
+                    @Override public void onAnimationRepeat(Animation animation) {}
+                    @Override public void onAnimationEnd(Animation animation) {}
+                });
+                v.startAnimation(anim_in);
+            }
+        });
+        v.startAnimation(anim_out);
+    }
+
     private void setUpRecyclerView() {
-        Query query = notebookRef;
+        Query query = notebookRef.orderBy("Timestamp", Query.Direction.ASCENDING);
 
         FirestoreRecyclerOptions<Note> options = new FirestoreRecyclerOptions.Builder<Note>()
                 .setQuery(query, Note.class)
@@ -108,10 +255,16 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
         adapter = new NoteAdapter(options);
 
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
+        LinearLayoutManager mLayoutManager = new LinearLayoutManager(this);
+
         recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setLayoutManager(mLayoutManager);
+
         recyclerView.setAdapter(adapter);
+
+
+
+
     }
 
 
@@ -164,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
         } catch (ActivityNotFoundException a) {
             Toast.makeText(getApplicationContext(),
-                    "sorry! Your device doesn\\'t support speech input",
+                    "sorry! Your device doesn't support speech input",
                     Toast.LENGTH_SHORT).show();
         }
     }
@@ -181,7 +334,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                    final String userQuery=result.get(0);
+                    userQuery=result.get(0);
                     query=userQuery;
                     RetrieveFeedTask task=new RetrieveFeedTask();
                     task.execute(userQuery);
@@ -286,7 +439,9 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         return null;
     }
 
-
+    public NoteAdapter getAdapter() {
+        return adapter;
+    }
 
 
     class RetrieveFeedTask extends AsyncTask<String, Void, String> {
@@ -314,12 +469,25 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             super.onPostExecute(s);
 
             resultnew=s;
-            Toast.makeText(MainActivity.this, query+resultnew, Toast.LENGTH_SHORT).show();
-            tts.speak(s,TextToSpeech.QUEUE_FLUSH,null);
-
+//            Toast.makeText(MainActivity.this, query+resultnew, Toast.LENGTH_SHORT).show();
+            if(flag) {
+                tts.speak(s, TextToSpeech.QUEUE_FLUSH, null);
+            }
             Map<String, Object> user = new HashMap<>();
+            user.put("Timestamp", FieldValue.serverTimestamp());
+
             user.put("Query", query);
             user.put("Result", resultnew);
+
+            recyclerView.post(new Runnable() {
+                @Override
+                public void run() {
+                    // Call smooth scroll
+                    recyclerView.smoothScrollToPosition(adapter.getItemCount() );
+                }
+            });
+
+
 
 
 // Add a new document with a generated ID
@@ -342,6 +510,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         }
 
     }
+
 
 
     @Override
