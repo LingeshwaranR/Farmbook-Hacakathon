@@ -27,6 +27,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -59,6 +60,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
 
@@ -66,14 +68,17 @@ import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener{
     private final int REQ_CODE_SPEECH_INPUT = 100;
-    ImageView btnSpeak,btnvol;
+    ImageView btnSpeak,btnvol,langbtn;
     TextToSpeech tts;
     EditText editText;
     Boolean flagFab = true;
     Boolean flagFab1 = false;
     Boolean flag=true;
+    Boolean lang=false;
+
     String userQuery;
     TextView textView;
+    Context context=this;
 
     String query,resultnew;
     int MY_DATA_CHECK_CODE = 1000;
@@ -84,6 +89,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
     private NoteAdapter adapter;
     RecyclerView recyclerView;
+    RelativeLayout relativeLayout;
 
 
 
@@ -99,8 +105,10 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         tts = new TextToSpeech(this, this);
         btnSpeak = findViewById(R.id.fab_img);
         btnvol=findViewById(R.id.fab_img1);
+        langbtn=findViewById(R.id.fab_img2);
         textView=findViewById(R.id.textView4);
         editText = (EditText)findViewById(R.id.editText);
+        relativeLayout=findViewById(R.id.addBtn);
 
         btnvol.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -127,6 +135,30 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             }
         });
 
+        langbtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                ImageView fab_images3 = (ImageView)findViewById(R.id.fab_img2);
+
+                Bitmap image13 = BitmapFactory.decodeResource(getResources(),R.drawable.tamil);
+                Bitmap image3 = BitmapFactory.decodeResource(getResources(),R.drawable.english);
+                if(lang){
+                    ImageViewAnimatedChange(MainActivity.this,fab_images3,image3);
+                    lang=false;
+                    flag=true;
+                    relativeLayout.setVisibility(View.VISIBLE);
+
+                }
+                else
+                {
+                    ImageViewAnimatedChange(MainActivity.this,fab_images3,image13);
+                   lang=true;
+                    relativeLayout.setVisibility(View.INVISIBLE);
+
+                }
+            }
+        });
 
 
 
@@ -176,10 +208,10 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
                            userQuery= editText.getText().toString();
                            editText.getText().clear();
-                            query=userQuery;
 
                             RetrieveFeedTask task=new RetrieveFeedTask();
-                            task.execute(userQuery);
+                            query=userQuery;
+                                task.execute(userQuery);
 
 
 
@@ -217,11 +249,23 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
             }
         });
+//        String textToBeTranslate= "வரவேற்பு";
 
 
 
     }
-
+    void Translate(String query,String languagePair) throws ExecutionException, InterruptedException {
+        TranslatorBackgroundTask translatorBackgroundTask= new TranslatorBackgroundTask(context);
+        String translationResult = translatorBackgroundTask.execute(query,languagePair).get();
+        translationResult = translationResult.substring(translationResult.indexOf('[')+1);
+        translationResult = translationResult.substring(0,translationResult.indexOf("]"));
+        translationResult = translationResult.substring(translationResult.indexOf('"')+1);
+        translationResult = translationResult.substring(0,translationResult.indexOf('"'));
+//        Toast.makeText(context,translationResult, Toast.LENGTH_LONG).show();
+        userQuery=translationResult;
+        resultnew=translationResult;
+        Log.d("Translation Result", String.valueOf(translationResult)); // Logs the result in Android Monitor
+    }
 
 
 
@@ -286,7 +330,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     public void onInit(int status) {
 
         if (status == TextToSpeech.SUCCESS) {
-            int result = tts.setLanguage(Locale.US);
+            int result = tts.setLanguage(Locale.UK);
 
             if (result == TextToSpeech.LANG_MISSING_DATA
                     || result == TextToSpeech.LANG_NOT_SUPPORTED) {
@@ -307,7 +351,8 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        // intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        if(lang)
+         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ta-IN");
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
                 "Ask your Query");
 
@@ -335,7 +380,19 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     userQuery=result.get(0);
+
                     query=userQuery;
+                    if(!lang) {
+                        String languagePair = "ta-en"; //English to French ("<source_language>-<target_language>")
+                        //Executing the translation function
+                        try {
+                            Translate(query, languagePair);
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     RetrieveFeedTask task=new RetrieveFeedTask();
                     task.execute(userQuery);
 
@@ -467,8 +524,30 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
+            recyclerView.post(new Runnable() {
+                @Override
+                public void run() {
+                    // Call smooth scroll
+                    recyclerView.smoothScrollToPosition(adapter.getItemCount() );
+                }
+            });
+
 
             resultnew=s;
+            if (lang){
+                flag=false;
+                flagFab1=false;
+
+            String languagePair = "en-ta"; //English to French ("<source_language>-<target_language>")
+            //Executing the translation function
+            try {
+                Translate(resultnew,languagePair);
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            }
 //            Toast.makeText(MainActivity.this, query+resultnew, Toast.LENGTH_SHORT).show();
             if(flag) {
                 tts.speak(s, TextToSpeech.QUEUE_FLUSH, null);
@@ -479,13 +558,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
             user.put("Query", query);
             user.put("Result", resultnew);
 
-            recyclerView.post(new Runnable() {
-                @Override
-                public void run() {
-                    // Call smooth scroll
-                    recyclerView.smoothScrollToPosition(adapter.getItemCount() );
-                }
-            });
 
 
 
