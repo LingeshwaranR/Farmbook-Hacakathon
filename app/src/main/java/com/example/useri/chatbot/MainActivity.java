@@ -7,10 +7,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -77,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     Boolean lang=false;
 
     String userQuery;
-    TextView textView;
+    TextView textView ,txt;
     Context context=this;
 
     String query,resultnew;
@@ -136,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         });
 
         langbtn.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View v) {
 
@@ -147,6 +150,10 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     ImageViewAnimatedChange(MainActivity.this,fab_images3,image3);
                     lang=false;
                     flag=true;
+                    textView.setTextSize(21);
+
+                    textView.setText("  Farming Assistance");
+
                     relativeLayout.setVisibility(View.VISIBLE);
 
                 }
@@ -155,6 +162,11 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     ImageViewAnimatedChange(MainActivity.this,fab_images3,image13);
                    lang=true;
                     relativeLayout.setVisibility(View.INVISIBLE);
+                    textView.setText("    விவசாயி உதவி");
+                    textView.setTextSize(22);
+
+
+
 
                 }
             }
