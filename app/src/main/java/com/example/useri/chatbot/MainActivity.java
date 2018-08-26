@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.Voice;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
@@ -62,6 +63,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -161,8 +163,9 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 {
                     ImageViewAnimatedChange(MainActivity.this,fab_images3,image13);
                    lang=true;
+
                     relativeLayout.setVisibility(View.INVISIBLE);
-                    textView.setText("    விவசாயி உதவி");
+                    textView.setText("     விவசாயி உதவி");
                     textView.setTextSize(22);
 
 
@@ -342,7 +345,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     public void onInit(int status) {
 
         if (status == TextToSpeech.SUCCESS) {
-            int result = tts.setLanguage(Locale.UK);
+            int result = tts.setLanguage(Locale.US);
 
             if (result == TextToSpeech.LANG_MISSING_DATA
                     || result == TextToSpeech.LANG_NOT_SUPPORTED) {
@@ -394,17 +397,19 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     userQuery=result.get(0);
 
                     query=userQuery;
-                    if(!lang) {
+                    if(lang) {
                         String languagePair = "ta-en"; //English to French ("<source_language>-<target_language>")
                         //Executing the translation function
                         try {
                             Translate(query, languagePair);
+
                         } catch (ExecutionException e) {
                             e.printStackTrace();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
+
                     RetrieveFeedTask task=new RetrieveFeedTask();
                     task.execute(userQuery);
 
@@ -533,6 +538,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         }
 
 
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
@@ -563,6 +569,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 //            Toast.makeText(MainActivity.this, query+resultnew, Toast.LENGTH_SHORT).show();
             if(flag) {
                 tts.speak(s, TextToSpeech.QUEUE_FLUSH, null);
+
             }
             Map<String, Object> user = new HashMap<>();
             user.put("Timestamp", FieldValue.serverTimestamp());
