@@ -35,6 +35,9 @@ Farmbook is AIML android application that will be the companian to the farmers a
 ## FEATURES
 
 FARMBOOK Is Bilingual APP , so far it contains Tamil and English languages. Farmbook gives the Login for farmers with thier basic credential details.The Notable feature of Application is that it contains
+
+### Weather and production prediction
+Using the dataset we predicted  Weather patterns in India and predicted the ideal time for different crop cultivation.With the help  various factors like state,district,wind speed,season,humidity,rainfall,area,crop,year,temperature.we concluded it
 ### Storyboard
 Storyboard is AI bot which automatically displays the current and trending information about the farming and farmer related things. And also the users(Farmers) can upload and share thier own stories.
 
@@ -68,8 +71,6 @@ CODE:get the code @ my repo
 ![demo2](https://3.bp.blogspot.com/-8hKrS6Bo7Jc/Wn7aFPZmb8I/AAAAAAAACa8/uTGwypxv490ZYYMH2yzS0yFkoDda4VD6wCLcBGAs/s1600/Screenshot_1517534847.png)
 [![watchvid](https://www.youtube.com/watch?v=9qzjgMT5qak)](https://www.youtube.com/watch?v=9qzjgMT5qak)
 
-## TO BE COMPLETED
-The rest of theb features **storyboard** and **future prediction** is been currently worked by our team and hopwe will be completed before the day of HACKATHON
 
 ## CONTRIBUTORS
 ### TEAMNAME: TECHWIZ
